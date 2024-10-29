@@ -67,10 +67,10 @@ file(GLOB_RECURSE TEST_SOURCES "tests/*.cpp")
 add_executable(${PROJECT_NAME}_test ${TEST_SOURCES} ${SOURCES})
 
 # Set include directories for the test target
-target_include_directories(${PROJECT_NAME}_test PRIVATE include ${GTEST_INCLUDE_DIRS})
+target_include_directories(${PROJECT_NAME}_test PRIVATE include ${GTEST_INCLUDE_DIRS} ${LLAMA_INCLUDE_DIR})
 
 # Link Google Test and raylib to test executable
-target_link_libraries(${PROJECT_NAME}_test PRIVATE GTest::gtest GTest::gtest_main)
+target_link_libraries(${PROJECT_NAME}_test PRIVATE GTest::gtest GTest::gtest_main ${LLAMA_LIBRARY})
 
 
 # Windows DLL handling for test executable
