@@ -75,7 +75,7 @@ run() {
         build || exit 1
     fi
     echo "Running executable..."
-    "$exe_path"
+    "$exe_path" "$@"
 }
 
 # Function to run tests
@@ -89,28 +89,51 @@ test() {
 }
 
 # Main logic
-if [ $# -eq 0 ]; then
-    run
-else
-    for arg in "$@"; do
+actions=()
+app_args=()
+parsing_actions=true
+
+# Parse arguments
+for arg in "$@"; do
+    if $parsing_actions; then
         case $arg in
-            build)
-                build
-                ;;
-            clean)
-                clean
-                ;;
-            run)
-                run
-                ;;
-            test)
-                test
+            clean|build|run|test)
+                actions+=("$arg")
                 ;;
             *)
-                echo "Unknown action: $arg"
-                echo "Valid actions: build, clean, run, test"
-                exit 1
-                ;;
+            parsing_actions=false
+            app_args+=("$arg")
+            ;;
         esac
-    done
+    else
+        app_args+=("$arg")
+    fi
+done
+
+# If no action default to "run"
+if [ ${#actions[@]} -eq 0 ]; then
+    actions+=("run")
 fi
+
+# Execute actions
+for action in "${actions[@]}"; do
+    case $action in
+        build)
+            build
+            ;;
+        clean)
+            clean
+            ;;
+        run)
+            run "${app_args[@]}"
+            ;;
+        test)
+            test
+            ;;
+        *)
+            echo "Unknown action: $action"
+            echo "Valid actions: build, clean, run, test"
+            exit 1
+            ;;
+    esac
+done
