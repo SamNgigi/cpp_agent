@@ -27,13 +27,7 @@ int main(int argc, char** argv){
   std::print("model_path :: {}\n\n", env["CODE_LLAMA"]);
 
 
-  BenchmarkWrapper benchmark(env["CODE_LLAMA"].c_str());
-  std::pair<double, int> result = benchmark.run_base_inference();
- 
-  std::print("HERE:: {0},{1}\n", result.first, result.second);
-
-
-/*   try {
+  try {
     BenchmarkWrapper benchmark(env["CODE_LLAMA"].c_str());
     std::pair<double, int> result {};
     if(run_type == "base"){
@@ -41,11 +35,11 @@ int main(int argc, char** argv){
     }else if(run_type == "optimized"){
       result = benchmark.run_optimized_inference();
     }
-    std::print("HERE:: {0},{1}\n", result.first, result.second);
+    std::print("INFERENCE TIME:: {0}\nTOKENS GENERATED::{1}\n", result.first, result.second);
   }catch(const std::exception& e) {
     std::print(stderr, "Main::Error: {}\n", e.what());
     return EXIT_FAILURE;
   }
- */
+
   return EXIT_SUCCESS;
 }
