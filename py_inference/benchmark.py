@@ -170,7 +170,7 @@ class InferenceBenchmark:
                 inference_time_str, tokens_str = result.stdout.strip().split(',')
                 inference_time = float(inference_time_str)
                 tokens = int(tokens_str)
-                self._save_result(i, 'cpp_base', inference_time, tokens)
+                self._save_result(i, 'cpp_optimized', inference_time, tokens)
                 times.append(inference_time)
                 
                 print(f"Successfully recorded: time={inference_time:.4f}s, tokens={tokens}")
