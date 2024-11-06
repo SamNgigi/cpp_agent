@@ -4,8 +4,8 @@
 dir_name=$(basename "$(pwd)")
 
 # Define paths for executables (Git Bash handles the .exe extension automatically)
-exe_path="build/Debug/$dir_name"
-test_exe_path="build/Debug/${dir_name}_test"
+exe_path="build/Release/$dir_name"
+test_exe_path="build/Release/${dir_name}_test"
 
 # Function to clean build artifacts directory
 clean() {
@@ -43,14 +43,14 @@ build() {
     # Configure CMake with or without vcpkg
     if [ -n "$vcpkg_path" ]; then
         echo "Using vcpkg toolchain at: $vcpkg_path"
-        cmake -DCMAKE_TOOLCHAIN_FILE="$vcpkg_path" .. || {
+        cmake -DCMAKE_TOOLCHAIN_FILE="$vcpkg_path" -DCMAKE_BUILD_TYPE=Release .. || {
             echo "CMake configuration failed."
             popd > /dev/null
             exit 1
         }
     else
         echo "No vcpkg toolchain found, using default CMake configuration"
-        cmake .. || {
+        cmake  -DCMAKE_BUILD_TYPE=Release .. || {
             echo "CMake configuration failed."
             popd > /dev/null
             exit 1
@@ -58,7 +58,7 @@ build() {
     fi
 
     # Build the project
-    cmake --build . || {
+    cmake --build . --config Release || {
         echo "Build failed."
         popd > /dev/null
         exit 1

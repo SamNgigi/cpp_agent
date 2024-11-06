@@ -7,13 +7,13 @@
 
 BenchmarkWrapper::BenchmarkWrapper(const char* model_path){
   // Initialize model
-  std::print("Initializing model from path: {}\n\n", model_path);
+  std::print(stderr, "Initializing model from path: {}\n\n", model_path);
   llama_model_params model_params = llama_model_default_params();
   model_params.n_gpu_layers = 0; // CPU only for testing
   model_params.vocab_only = false;
   model = llama_load_model_from_file(model_path, model_params);
   if(!model){ throw std::runtime_error("Failed to load model"); }
-  std::print("\nModel loaded successfully\n\n");
+  std::print(stderr, "\nModel loaded successfully\n\n");
 
   
   // Initialize context
@@ -27,7 +27,7 @@ BenchmarkWrapper::BenchmarkWrapper(const char* model_path){
     llama_free_model(model);
     throw std::runtime_error("Failed to create context");
   }
-  std::print("\nContext loaded successfully\n");
+  std::print(stderr, "\nContext loaded successfully\n");
 
   // Intialize sampler
   sampler = llama_sampler_init_greedy();
@@ -36,7 +36,7 @@ BenchmarkWrapper::BenchmarkWrapper(const char* model_path){
     llama_free_model(model);
     throw std::runtime_error("Failed to initialize sampler");
   }
-  std::print("\nSampler initialized successfully\n");
+  std::print(stderr, "\nSampler initialized successfully\n");
 }
 
 std::vector<llama_token> tokenize_input(llama_model* model, const char* prompt){
@@ -62,15 +62,15 @@ std::vector<llama_token> tokenize_input(llama_model* model, const char* prompt){
 
 std::pair<double, int> BenchmarkWrapper::run_base_inference(){
   try{
-    std::print("Starting base inference...\n");
+    //std::print(stderr, "Starting base inference...\n");
     auto start = std::chrono::high_resolution_clock::now();
 
     const char* prompt = "Tell me about machine learning.";
-    std::print("Tokenizing input...\n");
+    //std::print(stderr, "Tokenizing input...\n");
     std::vector<llama_token> tokens = tokenize_input(model, prompt);
-    std::print("Tokenized {} tokens\n", tokens.size());
+    //std::print(stderr, "Tokenized {} tokens\n", tokens.size());
     
-    std::print("Creating batch...\n");
+    //std::print(stderr, "Creating batch...\n");
     // Create batch for processing
     llama_batch batch = llama_batch_init(
       (int)tokens.size(),
@@ -88,7 +88,7 @@ std::pair<double, int> BenchmarkWrapper::run_base_inference(){
     }
 
     batch.n_tokens = tokens.size();
-    std::print("Processing initial batch...\n");
+    //std::print(stderr, "Processing initial batch...\n");
     // Process batch
     if(llama_decode(ctx, batch) != 0){ 
       llama_batch_free(batch);
@@ -99,14 +99,14 @@ std::pair<double, int> BenchmarkWrapper::run_base_inference(){
     int tokens_generated = 0;
     int last_logits_pos= 0;
     
-    std::print("Starting token generation...\n");
+    //std::print(stderr, "Starting token generation...\n");
     for(int i = 0; i < n_max_tokens; i++){
-      std::print("Sampling token {} at position {}\n", i, last_logits_pos);
+      //std::print(stderr, "Sampling token {} at position {}\n", i, last_logits_pos);
       int sampling_pos = (i == 0)? (tokens.size() - 1): 0;
       llama_token new_token = llama_sampler_sample(sampler, ctx, sampling_pos);
-      std::print("Sampled token: {}\n", new_token);
+      //std::print(stderr, "Sampled token: {}\n", new_token);
       if(new_token == llama_token_eos(model)){
-        std::print("Reached EOS token\n");
+        //std::print(stderr, "Reached EOS token\n");
         break;
       }
       tokens_generated++;
@@ -123,14 +123,14 @@ std::pair<double, int> BenchmarkWrapper::run_base_inference(){
       new_batch.logits[0] = 1;
       new_batch.n_tokens = 1;
 
-      // std::print("Decoding token...\n");
+      // std::print(stderr, "Decoding token...\n");
       if(llama_decode(ctx, new_batch) != 0){
         llama_batch_free(new_batch);
         llama_batch_free(batch);
         throw std::runtime_error("Failed to decode");
       }
       llama_batch_free(new_batch);
-      // UPdate last_logits_pos to the position within the batch
+      // Update last_logits_pos to the position within the batch
       last_logits_pos = 0; // Since new_batch.pos[0] = 0;
     }
     llama_batch_free(batch);
@@ -146,12 +146,12 @@ std::pair<double, int> BenchmarkWrapper::run_base_inference(){
 
 std::pair<double, int> BenchmarkWrapper::run_optimized_inference() {
   try {
-      std::print("Starting optimized inference...\n");
+      std::print(stderr, "Starting optimized inference...\n");
       auto start = std::chrono::high_resolution_clock::now();
 
       const char* prompt = "Tell me about machine learning.";
       std::vector<llama_token> tokens = tokenize_input(model, prompt);
-      std::print("Tokenized {} tokens\n", tokens.size());
+      std::print(stderr, "Tokenized {} tokens\n", tokens.size());
 
       // Constants for optimized batching
       const int BATCH_SIZE = 32;  // Process multiple tokens at once
@@ -165,7 +165,7 @@ std::pair<double, int> BenchmarkWrapper::run_optimized_inference() {
       );
 
       // First, process the prompt
-      std::print("Processing prompt...\n");
+      std::print(stderr, "Processing prompt...\n");
       int current_pos = 0;
       while (current_pos < tokens.size()) {
           int tokens_remaining = tokens.size() - current_pos;
@@ -181,7 +181,7 @@ std::pair<double, int> BenchmarkWrapper::run_optimized_inference() {
           }
           batch.n_tokens = tokens_to_process;
 
-          std::print("Processing prompt batch of {} tokens at position {}\n", 
+          std::print(stderr, "Processing prompt batch of {} tokens at position {}\n", 
                     tokens_to_process, current_pos);
 
           if (llama_decode(ctx, batch) != 0) {
@@ -197,15 +197,15 @@ std::pair<double, int> BenchmarkWrapper::run_optimized_inference() {
       std::vector<llama_token> generated_tokens;
       int last_logits_pos = tokens.size() - 1;  // Track position of last computed logits
       
-      std::print("Starting optimized token generation from position {}...\n", sequence_pos);
+      std::print(stderr, "Starting optimized token generation from position {}...\n", sequence_pos);
       
       while (tokens_generated < n_max_tokens) {
           // Sample next token using last valid logits position
-          std::print("Sampling using logits from position {}\n", last_logits_pos);
+          std::print(stderr, "Sampling using logits from position {}\n", last_logits_pos);
           llama_token new_token = llama_sampler_sample(sampler, ctx, last_logits_pos);
           
           if (new_token == llama_token_eos(model)) {
-              std::print("Reached EOS token\n");
+              std::print(stderr, "Reached EOS token\n");
               break;
           }
           
@@ -217,7 +217,7 @@ std::pair<double, int> BenchmarkWrapper::run_optimized_inference() {
               tokens_generated == n_max_tokens || 
               new_token == llama_token_eos(model)) {
               
-              std::print("Processing generation batch of {} tokens at position {}\n", 
+              std::print(stderr, "Processing generation batch of {} tokens at position {}\n", 
                         generated_tokens.size(), sequence_pos);
 
               // Fill the batch with accumulated tokens
@@ -249,7 +249,7 @@ std::pair<double, int> BenchmarkWrapper::run_optimized_inference() {
       auto end = std::chrono::high_resolution_clock::now();
       std::chrono::duration<double> diff = end - start;
       
-      std::print("Optimized inference completed. Generated {} tokens\n", tokens_generated);
+      std::print(stderr, "Optimized inference completed. Generated {} tokens\n", tokens_generated);
       return {diff.count(), tokens_generated};
       
   } catch(const std::exception& e) {
