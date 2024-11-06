@@ -1,0 +1,5 @@
+run_id,implementation,inference_time,tokens_generated
+0,python,157.1028046,506
+1,python,149.4368463,506
+2,python,143.28253970000003,506
+3,python,147.1676063,506
